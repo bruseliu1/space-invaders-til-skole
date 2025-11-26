@@ -1,0 +1,369 @@
+space-invaders-70s.html
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>70s Space Invaders — Retro</title>
+  <style>
+    /* Retro 70s arcade look */
+    :root{
+      --bg:#020b02; /* very dark green */
+      --phosphor:#6cff9a; /* pale green phosphor */
+      --accent:#9ef7b9;
+      --dim:#103210;
+      --panel:#081408;
+    }
+    html,body{height:100%;margin:0;font-family: 'Courier New', monospace;background:var(--bg);color:var(--phosphor)}
+    .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:18px;box-sizing:border-box}
+    .card{width:min(960px,96vw);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:8px;padding:12px;box-shadow:0 8px 40px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+    header{display:flex;align-items:center;gap:16px}
+    h1{font-size:20px;margin:0;color:var(--phosphor);letter-spacing:2px}
+    .sub{color:#9ef7b9aa;font-size:12px}
+
+    /* game stage */
+    .stage-wrap{display:flex;gap:12px;align-items:flex-start;margin-top:12px}
+    canvas#stage{background:linear-gradient(180deg,#001100 0%, #001a00 40%);display:block;border-radius:6px;width:720px;height:540px;image-rendering:pixelated}
+
+    /* UI */
+    .sidebar{width:200px;padding:8px;background:linear-gradient(180deg,var(--panel),#031004);border-radius:6px;border:1px solid rgba(255,255,255,0.02);height:540px;box-sizing:border-box}
+    .info{font-size:14px;margin-bottom:12px}
+    .big{font-size:28px;letter-spacing:2px}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    button{background:transparent;border:1px solid var(--phosphor);color:var(--phosphor);padding:8px;border-radius:6px;cursor:pointer}
+    button.primary{background:var(--phosphor);color:#012a09;font-weight:700}
+
+    /* touch controls */
+    .touch{display:none;margin-top:10px;gap:8px}
+    .touch button{flex:1;padding:16px;border-radius:8px;font-size:18px}
+
+    /* CRT scanlines effect */
+    .crt{position:relative;overflow:hidden}
+    .crt:after{content:'';position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;mix-blend-mode:overlay;background-image:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.06) 50%);background-size:100% 4px}
+
+    footer{margin-top:10px;font-size:12px;color:#8ef7aa88}
+
+    @media (max-width:900px){
+      .stage-wrap{flex-direction:column;align-items:center}
+      canvas#stage{width:92vw;height:69vw}
+      .sidebar{width:92vw;height:auto}
+      .touch{display:flex}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,var(--phosphor),#5ef0a6);display:flex;align-items:center;justify-content:center;color:#012a09;font-weight:900">70s</div>
+        <div>
+          <h1>Space Patrol — 1978</h1>
+          <div class="sub">A little tribute to classic Space Invaders — play with keyboard or touch</div>
+        </div>
+      </header>
+
+      <div class="stage-wrap">
+        <div class="crt">
+          <canvas id="stage" width="720" height="540" tabindex="0"></canvas>
+        </div>
+
+        <aside class="sidebar">
+          <div class="info">
+            <div>SCORE</div>
+            <div class="big" id="score">0</div>
+          </div>
+          <div class="info">
+            <div>LIVES</div>
+            <div class="big" id="lives">3</div>
+          </div>
+          <div class="controls">
+            <button id="startBtn" class="primary">START</button>
+            <button id="muteBtn">Toggle Sound</button>
+            <div style="font-size:12px;color:#9ef7b9aa;margin-top:6px">Controls: ← → or A / D to move, Space to fire</div>
+          </div>
+
+          <div class="touch" id="touchControls" style="margin-top:12px">
+            <button id="leftBtn">◀</button>
+            <button id="shootBtn">●</button>
+            <button id="rightBtn">▶</button>
+          </div>
+
+          <div style="margin-top:12px;font-size:12px;color:#9ef7b9aa">Tip: Use an iframe embed in Google Sites (host the file and embed the URL)</div>
+        </aside>
+      </div>
+
+      <footer>Made with JS — retro green phosphor vibes ✦</footer>
+    </div>
+  </div>
+
+<script>
+// ======= Game parameters =======
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let W = canvas.width, H = canvas.height;
+
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+const startBtn = document.getElementById('startBtn');
+const muteBtn = document.getElementById('muteBtn');
+
+let soundOn = true;
+let score = 0;
+let lives = 3;
+let gameState = 'menu'; // menu, playing, gameover
+
+// retro palette
+const BG = '#021006';
+const PH = '#6cff9a';
+
+// sizes based on canvas
+const scale = W / 720; // use this to maintain proportions
+
+// ======= simple beep sound generator (WebAudio) =======
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function beep(freq=440, dur=0.08, type='sine', vol=0.1){
+  if(!soundOn) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  o.stop(audioCtx.currentTime + dur + 0.02);
+}
+
+// ======= Entities =======
+class Player{
+  constructor(){
+    this.w = 48*scale; this.h = 28*scale;
+    this.x = W/2 - this.w/2; this.y = H - this.h - 12*scale;
+    this.speed = 260*scale; this.color = PH; this.cool = 0; this.cooldown = 0.45;
+  }
+  draw(){
+    ctx.fillStyle = PH;
+    // simple pixel ship
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y + this.h);
+    ctx.lineTo(this.x + this.w, this.y + this.h);
+    ctx.lineTo(this.x + this.w*0.75, this.y + this.h*0.2);
+    ctx.lineTo(this.x + this.w*0.25, this.y + this.h*0.2);
+    ctx.closePath();
+    ctx.fill();
+  }
+  update(dt, dir){
+    if(dir !== 0) this.x += dir * this.speed * dt;
+    this.x = Math.max(6*scale, Math.min(W - this.w - 6*scale, this.x));
+    this.cool = Math.max(0, this.cool - dt);
+  }
+  canShoot(){return this.cool === 0}
+  shoot(){this.cool = this.cooldown}
+}
+
+class Bullet{
+  constructor(x,y,vy, friend=true){this.x=x;this.y=y;this.r=4*scale;this.vy=vy;this.friend=friend}
+  update(dt){this.y += this.vy*dt}
+  draw(){ctx.fillStyle=PH;ctx.fillRect(this.x-2*scale,this.y-6*scale,4*scale,8*scale)}
+}
+
+class Invader{
+  constructor(x,y,row){this.x=x;this.y=y;this.w=34*scale;this.h=24*scale;this.row=row;this.alive=true}}
+
+// ======= Game objects =======
+let player = new Player();
+let bullets = []; // both player and invader bullets
+let invaders = [];
+let invDir = 1; // 1 right, -1 left
+let invSpeed = 24*scale; // base speed
+let invDrop = 28*scale;
+let invTimer = 0;
+let invFireRate = 1.0; // seconds
+
+function resetGame(){
+  score = 0; lives = 3; player = new Player(); bullets = []; invaders = [];
+  invDir = 1; invSpeed = 24*scale; invTimer = 0; invFireRate = 1.0;
+  spawnInvaders();
+  updateUI();
+}
+
+function spawnInvaders(){
+  invaders = [];
+  const cols = 11, rows = 5;
+  const marginX = 60*scale; const marginY = 60*scale;
+  const spacingX = (W - marginX*2 - 34*scale) / (cols-1);
+  const spacingY = 42*scale;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const x = marginX + c*spacingX;
+      const y = marginY + r*spacingY;
+      invaders.push(new Invader(x,y,r));
+    }
+  }
+}
+
+// ======= Input =======
+const keys = {};
+window.addEventListener('keydown', e=>{keys[e.key.toLowerCase()]=true; if(['arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault(); if(gameState==='menu' && e.key===' ') startGame(); });
+window.addEventListener('keyup', e=>{keys[e.key.toLowerCase()]=false});
+
+// Touch buttons
+document.getElementById('leftBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys['arrowleft']=true}, {passive:false});
+document.getElementById('leftBtn').addEventListener('touchend', e=>{keys['arrowleft']=false});
+document.getElementById('rightBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys['arrowright']=true}, {passive:false});
+document.getElementById('rightBtn').addEventListener('touchend', e=>{keys['arrowright']=false});
+document.getElementById('shootBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys[' ']=true}, {passive:false});
+document.getElementById('shootBtn').addEventListener('touchend', e=>{keys[' ']=false});
+
+// buttons
+startBtn.addEventListener('click', ()=>{startGame()});
+muteBtn.addEventListener('click', ()=>{soundOn=!soundOn; muteBtn.textContent = soundOn? 'Toggle Sound' : 'Sound Off';});
+
+function startGame(){ if(gameState==='playing') return; resetGame(); gameState='playing'; lastTime = performance.now(); loop(lastTime);} 
+
+// ======= Collision helpers =======
+function rectIntersect(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by}
+
+// ======= Game loop =======
+let lastTime = 0; function loop(t){
+  const dt = Math.min(0.05, (t - lastTime)/1000); lastTime = t;
+  update(dt); render();
+  if(gameState==='playing') requestAnimationFrame(loop);
+}
+
+function update(dt){
+  // player input
+  let dir = 0; if(keys['arrowleft']||keys['a']) dir=-1; if(keys['arrowright']||keys['d']) dir=1;
+  player.update(dt, dir);
+  if((keys[' ']||keys['space']) && player.canShoot()){ // shoot
+    bullets.push(new Bullet(player.x + player.w/2, player.y - 10*scale, -420*scale));
+    player.shoot(); beep(880,0.05,'square',0.06);
+  }
+
+  // bullets
+  bullets.forEach(b=>b.update(dt));
+  bullets = bullets.filter(b=>b.y > -20 && b.y < H+20);
+
+  // invader movement
+  invTimer += dt;
+  // speed grows as fewer invaders remain
+  const living = invaders.filter(i=>i.alive);
+  const speedFactor = 1 + (40 - living.length)/40; // modest speedup
+  let moveX = invSpeed * invDir * speedFactor * dt;
+  let shouldDrop = false;
+  for(let inv of living){
+    inv.x += moveX;
+    if(inv.x < 8*scale || inv.x + inv.w > W - 8*scale) shouldDrop = true;
+  }
+  if(shouldDrop){ invDir *= -1; for(let inv of living){ inv.y += invDrop; } }
+
+  // invaders shooting
+  if(invTimer > invFireRate){
+    invTimer = 0; // pick a random bottom invader from a column
+    const columns = {};
+    living.forEach(i=>{ const c = Math.round((i.x - 60*scale) / ( (W - 120*scale - 34*scale)/(11-1) )); if(!columns[c] || columns[c].y < i.y) columns[c] = i; });
+    const choices = Object.values(columns);
+    if(choices.length){ const shooter = choices[Math.floor(Math.random()*choices.length)]; bullets.push(new Bullet(shooter.x + shooter.w/2, shooter.y + shooter.h + 6*scale, 220*scale, false)); beep(220,0.06,'sine',0.08); }
+  }
+
+  // bullet collisions
+  for(let b of bullets.filter(x=>x.friend!==false)){
+    for(let inv of invaders){ if(inv.alive && rectIntersect(b.x-4*scale,b.y-6*scale,8*scale,8*scale,inv.x,inv.y,inv.w,inv.h)){
+      inv.alive = false; b.y = -999; score += 10 + (5 * (4 - inv.row)); beep(1200,0.04,'triangle',0.06); updateUI(); break; }
+    }
+  }
+
+  // invader bullet hits player
+  for(let b of bullets.filter(x=>x.friend===false)){
+    if(rectIntersect(b.x-4*scale,b.y-6*scale,8*scale,8*scale,player.x,player.y,player.w,player.h)){
+      b.y = H + 999; lives -= 1; beep(140,0.2,'sawtooth',0.1); updateUI(); if(lives<=0) endGame(); else { player.x = W/2 - player.w/2; bullets = bullets.filter(x=>x.friend); }
+    }
+  }
+
+  // if invaders reach bottom -> gameover
+  if(invaders.some(i=>i.alive && i.y + i.h >= player.y)) { endGame(); }
+
+  // win condition
+  if(invaders.every(i=>!i.alive)){
+    // victory — spawn next wave with speedup
+    invSpeed *= 1.15; invFireRate = Math.max(0.4, invFireRate - 0.08);
+    spawnInvaders(); beep(1600,0.2,'sine',0.08);
+  }
+}
+
+function endGame(){ gameState='gameover'; beep(80,0.6,'sawtooth',0.12); startBtn.textContent = 'RESTART'; }
+
+function updateUI(){ scoreEl.textContent = score; livesEl.textContent = lives; }
+
+// ======= Rendering =======
+function render(){
+  // clear with slight vignette
+  ctx.fillStyle = BG; ctx.fillRect(0,0,W,H);
+
+  // stars
+  for(let i=0;i<60;i++){ ctx.fillStyle = (i%7===0)?'#0d3':'#053'; ctx.fillRect((i*97)%W, (i*37)%H, 1*scale, 1*scale); }
+
+  // draw invaders
+  for(let inv of invaders){ if(!inv.alive) continue; drawInvader(inv); }
+
+  // draw player
+  player.draw();
+
+  // draw bullets
+  bullets.forEach(b=>b.draw());
+
+  // HUD scanline glow
+  ctx.fillStyle = 'rgba(110,255,154,0.03)'; ctx.fillRect(0,H-90*scale,W,90*scale);
+
+  // scoreboard overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(6*scale,6*scale,200*scale,34*scale);
+  ctx.fillStyle = PH; ctx.font = (18*scale)+'px monospace'; ctx.fillText('SCORE: ' + score, 12*scale, 30*scale);
+}
+
+function drawInvader(inv){
+  // tiny chunky shape, different per row
+  const x = inv.x, y = inv.y, w = inv.w, h = inv.h;
+  ctx.fillStyle = PH;
+  // simple block invader by drawing rectangles for a pixel-art effect
+  const px = Math.round(w/8), py = Math.round(h/8);
+  for(let rx=0;rx<8;rx++){
+    for(let ry=0;ry<8;ry++){
+      // pattern based on row to get variety
+      const mask = ( ( (rx+ry*3 + inv.row) % 5) < 3 );
+      if(mask) ctx.fillRect(x + rx*px, y + ry*py, px-1, py-1);
+    }
+  }
+}
+
+// ======= Resize handling (for responsive embed) =======
+function resizeCanvas(){
+  // Keep internal resolution fixed for pixelated effect, but scale via css already set.
+  // If embed is small, we can reduce internal resolution.
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.max(320, Math.round(rect.width));
+  const cssH = Math.max(240, Math.round(rect.height));
+  canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+}
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+// focus for keyboard
+canvas.addEventListener('click', ()=>{ canvas.focus(); if(audioCtx.state==='suspended') audioCtx.resume(); });
+
+// initial spawn
+spawnInvaders(); updateUI();
+
+// autofocus start button
+startBtn.focus();
+
+// draw a little demo when in menu
+function drawMenu(){
+  ctx.fillStyle = BG; ctx.fillRect(0,0,W,H);
+  // small animated demo invaders
+  ctx.fillStyle = PH; ctx.font = '18px monospace'; ctx.fillText('PRESS START', W/2 - 60, H/2 - 10);
+}
+function menuLoop(t){ if(gameState==='menu'){ drawMenu(); requestAnimationFrame(menuLoop); } }
+menuLoop();
+
+</script>
+</body>
+</html>
