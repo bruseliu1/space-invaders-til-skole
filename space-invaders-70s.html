@@ -1,369 +1,582 @@
-space-invaders-70s.html
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>70s Space Invaders — Retro</title>
-  <style>
-    /* Retro 70s arcade look */
-    :root{
-      --bg:#020b02; /* very dark green */
-      --phosphor:#6cff9a; /* pale green phosphor */
-      --accent:#9ef7b9;
-      --dim:#103210;
-      --panel:#081408;
-    }
-    html,body{height:100%;margin:0;font-family: 'Courier New', monospace;background:var(--bg);color:var(--phosphor)}
-    .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:18px;box-sizing:border-box}
-    .card{width:min(960px,96vw);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:8px;padding:12px;box-shadow:0 8px 40px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
-    header{display:flex;align-items:center;gap:16px}
-    h1{font-size:20px;margin:0;color:var(--phosphor);letter-spacing:2px}
-    .sub{color:#9ef7b9aa;font-size:12px}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Classic Space Invaders — Retro</title>
+<style>
+  :root{
+    --bg:#000;
+    --ph:#7CFF9A;
+    --accent:#9ef7b9;
+    --panel:#071309;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#001000,#000);font-family:monospace;color:var(--ph);display:flex;align-items:center;justify-content:center}
+  .container{width:960px;max-width:96vw;padding:14px;box-sizing:border-box}
+  h1{margin:0 0 8px 0;font-size:20px;letter-spacing:2px}
+  #uiTop{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #hud{display:flex;gap:18px;align-items:center}
+  .hudItem{font-size:14px}
+  button{background:transparent;border:1px solid var(--ph);color:var(--ph);padding:8px 10px;border-radius:6px;cursor:pointer}
+  button.primary{background:var(--ph);color:#021409;font-weight:700}
 
-    /* game stage */
-    .stage-wrap{display:flex;gap:12px;align-items:flex-start;margin-top:12px}
-    canvas#stage{background:linear-gradient(180deg,#001100 0%, #001a00 40%);display:block;border-radius:6px;width:720px;height:540px;image-rendering:pixelated}
+  .stageWrap{display:flex;gap:12px}
+  canvas#stage{background:#000;width:720px;height:540px;image-rendering:pixelated;border:3px solid rgba(124,255,154,0.08);display:block}
+  .sidebar{flex:1;min-width:220px;background:linear-gradient(180deg,var(--panel),#021407);padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,0.03)}
+  .sidebar h3{margin:0 0 8px 0;font-size:14px}
+  .scoreBig{font-size:28px;font-weight:700}
+  .controls{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .touchControls{display:none;margin-top:10px}
+  .touchControls .row{display:flex;gap:8px}
+  .touchBtn{flex:1;padding:14px;border-radius:8px;border:1px solid var(--ph);background:transparent;color:var(--ph);font-size:18px}
+  .highscores{font-size:13px;margin-top:8px}
+  footer{margin-top:8px;font-size:12px;color:#9ef7b988}
 
-    /* UI */
-    .sidebar{width:200px;padding:8px;background:linear-gradient(180deg,var(--panel),#031004);border-radius:6px;border:1px solid rgba(255,255,255,0.02);height:540px;box-sizing:border-box}
-    .info{font-size:14px;margin-bottom:12px}
-    .big{font-size:28px;letter-spacing:2px}
-    .controls{display:flex;flex-direction:column;gap:8px}
-    button{background:transparent;border:1px solid var(--phosphor);color:var(--phosphor);padding:8px;border-radius:6px;cursor:pointer}
-    button.primary{background:var(--phosphor);color:#012a09;font-weight:700}
-
-    /* touch controls */
-    .touch{display:none;margin-top:10px;gap:8px}
-    .touch button{flex:1;padding:16px;border-radius:8px;font-size:18px}
-
-    /* CRT scanlines effect */
-    .crt{position:relative;overflow:hidden}
-    .crt:after{content:'';position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;mix-blend-mode:overlay;background-image:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.06) 50%);background-size:100% 4px}
-
-    footer{margin-top:10px;font-size:12px;color:#8ef7aa88}
-
-    @media (max-width:900px){
-      .stage-wrap{flex-direction:column;align-items:center}
-      canvas#stage{width:92vw;height:69vw}
-      .sidebar{width:92vw;height:auto}
-      .touch{display:flex}
-    }
-  </style>
+  /* responsive */
+  @media (max-width:980px){
+    .stageWrap{flex-direction:column;align-items:center}
+    canvas#stage{width:92vw;height:69vw}
+    .touchControls{display:block}
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <header>
-        <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,var(--phosphor),#5ef0a6);display:flex;align-items:center;justify-content:center;color:#012a09;font-weight:900">70s</div>
-        <div>
-          <h1>Space Patrol — 1978</h1>
-          <div class="sub">A little tribute to classic Space Invaders — play with keyboard or touch</div>
-        </div>
-      </header>
-
-      <div class="stage-wrap">
-        <div class="crt">
-          <canvas id="stage" width="720" height="540" tabindex="0"></canvas>
-        </div>
-
-        <aside class="sidebar">
-          <div class="info">
-            <div>SCORE</div>
-            <div class="big" id="score">0</div>
-          </div>
-          <div class="info">
-            <div>LIVES</div>
-            <div class="big" id="lives">3</div>
-          </div>
-          <div class="controls">
-            <button id="startBtn" class="primary">START</button>
-            <button id="muteBtn">Toggle Sound</button>
-            <div style="font-size:12px;color:#9ef7b9aa;margin-top:6px">Controls: ← → or A / D to move, Space to fire</div>
-          </div>
-
-          <div class="touch" id="touchControls" style="margin-top:12px">
-            <button id="leftBtn">◀</button>
-            <button id="shootBtn">●</button>
-            <button id="rightBtn">▶</button>
-          </div>
-
-          <div style="margin-top:12px;font-size:12px;color:#9ef7b9aa">Tip: Use an iframe embed in Google Sites (host the file and embed the URL)</div>
-        </aside>
-      </div>
-
-      <footer>Made with JS — retro green phosphor vibes ✦</footer>
+<div class="container">
+  <div id="uiTop">
+    <div>
+      <h1>Space Patrol — 1978 Tribute</h1>
+      <div style="color:#9ef7b9aa;font-size:12px">Keyboard: ← → or A/D to move, Space to shoot. Mobile: on-screen controls.</div>
+    </div>
+    <div id="hud">
+      <div class="hudItem">SCORE: <span id="score">0</span></div>
+      <div class="hudItem">LIVES: <span id="lives">3</span></div>
+      <div class="hudItem">LEVEL: <span id="level">1</span></div>
+      <button id="startBtn" class="primary">START</button>
+      <button id="muteBtn">MUTE</button>
     </div>
   </div>
 
+  <div class="stageWrap">
+    <canvas id="stage" width="720" height="540" tabindex="0"></canvas>
+
+    <aside class="sidebar">
+      <h3>Controls</h3>
+      <div>Keyboard: Arrow keys / A-D to move, Space to shoot.</div>
+      <div class="controls">
+        <button id="restartBtn">Restart</button>
+        <button id="toggleSoundBtn">Toggle Sound</button>
+      </div>
+
+      <div class="highscores">
+        <h3>Top Scores</h3>
+        <ol id="hsList" style="padding-left:18px;margin-top:6px"></ol>
+      </div>
+
+      <div class="touchControls" id="touchControls">
+        <h3>Touch</h3>
+        <div class="row">
+          <button class="touchBtn" id="leftTouch">◀</button>
+          <button class="touchBtn" id="shootTouch">●</button>
+          <button class="touchBtn" id="rightTouch">▶</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;font-size:12px;color:#9ef7b9aa">
+        Tip: You can play instantly — open a blank tab, open the console and paste: <code>const w=window.open();w.document.write(`...`);w.document.close();</code> and paste this whole HTML string where the dots are.
+      </div>
+    </aside>
+  </div>
+
+  <footer>Made with WebAudio & Canvas — Retro green phosphor vibes ✦</footer>
+</div>
+
 <script>
-// ======= Game parameters =======
+/* ============================
+   Classic Space Invaders Clone
+   Single-file HTML — no external assets
+   Features:
+     - Multiple alien types and point values
+     - Two-frame alien animations
+     - Marching loop sound (WebAudio) whose tempo depends on remaining aliens
+     - Shields that take damage
+     - UFO bonus ship
+     - Frontline-only invader firing
+     - Levels, localStorage highscores, mobile controls
+   ============================ */
+
+// Canvas setup
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 let W = canvas.width, H = canvas.height;
 
+// HUD elements
 const scoreEl = document.getElementById('score');
 const livesEl = document.getElementById('lives');
+const levelEl = document.getElementById('level');
 const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
 const muteBtn = document.getElementById('muteBtn');
+const toggleSoundBtn = document.getElementById('toggleSoundBtn');
+const hsList = document.getElementById('hsList');
 
 let soundOn = true;
-let score = 0;
-let lives = 3;
+let audioCtx = null;
+
+// Game state
+let score = 0, lives = 3, level = 1;
 let gameState = 'menu'; // menu, playing, gameover
+let player, bullets, aliens, shields, ufo;
+let alienDir = 1, alienBaseSpeed = 14, alienSpeed = 14;
+let alienAnim = 0, alienAnimTimer = 0;
+let fireTimer = 0, fireInterval = 1.2;
+let lastTime = 0;
+let marchIntervalId = null;
 
-// retro palette
-const BG = '#021006';
-const PH = '#6cff9a';
+// Input
+const keys = {left:false, right:false, shoot:false};
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft' || e.key.toLowerCase()==='a') keys.left=true;
+  if(e.key==='ArrowRight' || e.key.toLowerCase()==='d') keys.right=true;
+  if(e.key===' ' || e.key.toLowerCase()==='w') keys.shoot=true;
+  if(e.key==='Enter' && gameState!=='playing') startGame();
+});
+window.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft' || e.key.toLowerCase()==='a') keys.left=false;
+  if(e.key==='ArrowRight' || e.key.toLowerCase()==='d') keys.right=false;
+  if(e.key===' ' || e.key.toLowerCase()==='w') keys.shoot=false;
+});
 
-// sizes based on canvas
-const scale = W / 720; // use this to maintain proportions
+// Touch buttons
+document.getElementById('leftTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.left=true});
+document.getElementById('leftTouch').addEventListener('touchend',e=>{keys.left=false});
+document.getElementById('rightTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.right=true});
+document.getElementById('rightTouch').addEventListener('touchend',e=>{keys.right=false});
+document.getElementById('shootTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.shoot=true});
+document.getElementById('shootTouch').addEventListener('touchend',e=>{keys.shoot=false});
 
-// ======= simple beep sound generator (WebAudio) =======
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function beep(freq=440, dur=0.08, type='sine', vol=0.1){
+// Buttons
+startBtn.addEventListener('click', ()=>{ if(gameState!=='playing') startGame(); });
+restartBtn.addEventListener('click', ()=>{ resetAndStart(); });
+muteBtn.addEventListener('click', ()=>{ soundOn=!soundOn; updateMuteUI(); });
+toggleSoundBtn.addEventListener('click', ()=>{ soundOn=!soundOn; updateMuteUI(); });
+
+function updateMuteUI(){ muteBtn.textContent = soundOn? 'MUTE' : 'UNMUTE'; toggleSoundBtn.textContent = soundOn? 'Sound ON' : 'Sound OFF'; }
+
+// Audio helpers (WebAudio)
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playBeep(freq=800, time=0.08, type='square', vol=0.08){
   if(!soundOn) return;
+  ensureAudio();
   const o = audioCtx.createOscillator();
   const g = audioCtx.createGain();
   o.type = type; o.frequency.value = freq;
   g.gain.value = vol;
   o.connect(g); g.connect(audioCtx.destination);
   o.start();
-  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-  o.stop(audioCtx.currentTime + dur + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time);
+  o.stop(audioCtx.currentTime + time + 0.02);
 }
 
-// ======= Entities =======
-class Player{
-  constructor(){
-    this.w = 48*scale; this.h = 28*scale;
-    this.x = W/2 - this.w/2; this.y = H - this.h - 12*scale;
-    this.speed = 260*scale; this.color = PH; this.cool = 0; this.cooldown = 0.45;
+// marching loop: schedule a sequence of tones. Tempo varies by remaining aliens.
+let marchStep = 0;
+function startMarchingLoop(){
+  stopMarchingLoop();
+  ensureAudio();
+  marchStep = 0;
+  function step(){
+    if(!soundOn) return;
+    const alive = aliens ? aliens.filter(a=>a.alive).length : 0;
+    const baseTempo = Math.max(0.12, 0.6 * (alive / (11*5))); // fewer aliens -> faster -> smaller interval
+    // Rotate through 4-step pattern
+    const freqs = [880,660,540,440];
+    const f = freqs[marchStep % freqs.length] * (1 + (level-1)*0.03);
+    playBeep(f, 0.08, 'sawtooth', 0.05);
+    marchStep++;
+    // Set next
+    marchIntervalId = setTimeout(step, Math.max(70, baseTempo*1000));
+  }
+  step();
+}
+function stopMarchingLoop(){ if(marchIntervalId) { clearTimeout(marchIntervalId); marchIntervalId = null; } }
+
+// Entities & world
+class Player {
+  constructor(){ this.w=36; this.h=18; this.x=W/2 - this.w/2; this.y=H-58; this.speed=260; this.cool=0; this.cooldown=0.35; }
+  update(dt){
+    if(keys.left) this.x -= this.speed*dt;
+    if(keys.right) this.x += this.speed*dt;
+    this.x = Math.max(10, Math.min(W - this.w - 10, this.x));
+    this.cool = Math.max(0, this.cool - dt);
+    if(keys.shoot && this.cool===0){ bullets.push(new Bullet(this.x + this.w/2, this.y - 6, -380, true)); this.cool = this.cooldown; playBeep(1200,0.06,'square',0.07); }
   }
   draw(){
-    ctx.fillStyle = PH;
-    // simple pixel ship
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y + this.h);
-    ctx.lineTo(this.x + this.w, this.y + this.h);
-    ctx.lineTo(this.x + this.w*0.75, this.y + this.h*0.2);
-    ctx.lineTo(this.x + this.w*0.25, this.y + this.h*0.2);
-    ctx.closePath();
-    ctx.fill();
+    // draw simple ship (pixel style)
+    ctx.fillStyle = '#7CFF9A';
+    const sprite = [
+      '0011100',
+      '0111110',
+      '1111111',
+      '1111111'
+    ];
+    drawSprite(sprite, this.x, this.y, 4);
   }
-  update(dt, dir){
-    if(dir !== 0) this.x += dir * this.speed * dt;
-    this.x = Math.max(6*scale, Math.min(W - this.w - 6*scale, this.x));
-    this.cool = Math.max(0, this.cool - dt);
+}
+
+class Bullet {
+  constructor(x,y,vy,friend){ this.x = x; this.y = y; this.vy = vy; this.friend = friend; this.r = 3; }
+  update(dt){ this.y += this.vy * dt; }
+  draw(){ ctx.fillStyle = this.friend ? '#7CFF9A' : '#FF7B7B'; ctx.fillRect(this.x-2, this.y-6, 4, 8); }
+}
+
+class Alien {
+  constructor(x,y,type){ this.x=x; this.y=y; this.type=type; this.alive=true; this.w=28; this.h=20; }
+  draw(frame){
+    ctx.fillStyle = '#7CFF9A';
+    const sprites = ALIEN_SPRITES[this.type];
+    drawSprite(sprites[frame%2], this.x, this.y, 4);
   }
-  canShoot(){return this.cool === 0}
-  shoot(){this.cool = this.cooldown}
 }
 
-class Bullet{
-  constructor(x,y,vy, friend=true){this.x=x;this.y=y;this.r=4*scale;this.vy=vy;this.friend=friend}
-  update(dt){this.y += this.vy*dt}
-  draw(){ctx.fillStyle=PH;ctx.fillRect(this.x-2*scale,this.y-6*scale,4*scale,8*scale)}
+class UFO {
+  constructor(){ this.active=false; this.x= -80; this.y=35; this.v=90; this.dir=1; this.value=0; }
+  spawn(){
+    this.active = true;
+    this.dir = Math.random() < 0.5 ? 1 : -1;
+    this.x = this.dir===1 ? -80 : W+80;
+    this.y = 40;
+    this.v = 80 + Math.random()*80;
+    this.value = [50,100,150,300][Math.floor(Math.random()*4)];
+  }
+  update(dt){
+    if(!this.active) return;
+    this.x += this.v * this.dir * dt;
+    if(this.x < -100 || this.x > W+100) this.active=false;
+  }
+  draw(){
+    if(!this.active) return;
+    ctx.fillStyle = '#FFE88A';
+    const s = ['00111100','01111110','11111111','01111110','00111100'];
+    drawSprite(s, this.x, this.y, 3);
+    // score label
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(this.value, this.x+10, this.y-6);
+  }
 }
 
-class Invader{
-  constructor(x,y,row){this.x=x;this.y=y;this.w=34*scale;this.h=24*scale;this.row=row;this.alive=true}}
-
-// ======= Game objects =======
-let player = new Player();
-let bullets = []; // both player and invader bullets
-let invaders = [];
-let invDir = 1; // 1 right, -1 left
-let invSpeed = 24*scale; // base speed
-let invDrop = 28*scale;
-let invTimer = 0;
-let invFireRate = 1.0; // seconds
-
-function resetGame(){
-  score = 0; lives = 3; player = new Player(); bullets = []; invaders = [];
-  invDir = 1; invSpeed = 24*scale; invTimer = 0; invFireRate = 1.0;
-  spawnInvaders();
-  updateUI();
-}
-
-function spawnInvaders(){
-  invaders = [];
-  const cols = 11, rows = 5;
-  const marginX = 60*scale; const marginY = 60*scale;
-  const spacingX = (W - marginX*2 - 34*scale) / (cols-1);
-  const spacingY = 42*scale;
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const x = marginX + c*spacingX;
-      const y = marginY + r*spacingY;
-      invaders.push(new Invader(x,y,r));
+// Pixel sprite helper: sprite array of strings '0'/'1'
+function drawSprite(sprite, x, y, size){
+  ctx.fillStyle = '#7CFF9A';
+  for(let r=0;r<sprite.length;r++){
+    const row = sprite[r];
+    for(let c=0;c<row.length;c++){
+      if(row[c]==='1') ctx.fillRect(Math.round(x + c*size), Math.round(y + r*size), size, size);
     }
   }
 }
 
-// ======= Input =======
-const keys = {};
-window.addEventListener('keydown', e=>{keys[e.key.toLowerCase()]=true; if(['arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault(); if(gameState==='menu' && e.key===' ') startGame(); });
-window.addEventListener('keyup', e=>{keys[e.key.toLowerCase()]=false});
+// Alien sprites (two-frame animation each; 3 types with different shapes)
+const ALIEN_SPRITES = [
+  // Type 0 - top (worth 30)
+  [
+    ['0010100','0111110','1010101','1111111','0101010'],
+    ['0010100','0111110','1011101','1111111','0101010']
+  ],
+  // Type 1 - middle (worth 20)
+  [
+    ['0011100','0110110','1111111','0101010','0011000'],
+    ['0011100','0110110','1111111','0111110','0011000']
+  ],
+  // Type 2 - bottom (worth 10)
+  [
+    ['0010100','0111110','1111111','0111110','0010100'],
+    ['0010100','0111110','1111111','1111111','0010100']
+  ]
+];
+const ALIEN_POINTS = [30,20,10];
 
-// Touch buttons
-document.getElementById('leftBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys['arrowleft']=true}, {passive:false});
-document.getElementById('leftBtn').addEventListener('touchend', e=>{keys['arrowleft']=false});
-document.getElementById('rightBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys['arrowright']=true}, {passive:false});
-document.getElementById('rightBtn').addEventListener('touchend', e=>{keys['arrowright']=false});
-document.getElementById('shootBtn').addEventListener('touchstart', e=>{e.preventDefault(); keys[' ']=true}, {passive:false});
-document.getElementById('shootBtn').addEventListener('touchend', e=>{keys[' ']=false});
+// Shields: each shield is a grid of bricks
+function makeShields(){
+  const s = [];
+  const shieldCount = 4;
+  const shieldWidth = 56;
+  const startX = 80;
+  const gap = (W - startX*2 - shieldWidth*shieldCount) / (shieldCount-1);
+  for(let i=0;i<shieldCount;i++){
+    const sx = startX + i*(shieldWidth + gap);
+    const sy = H - 170;
+    // create bricks grid 7x5
+    const bricks = [];
+    for(let ry=0;ry<5;ry++){
+      for(let rx=0;rx<7;rx++){
+        // leave center top holes to mimic original shield shapes
+        if(ry===0 && (rx===2 || rx===4)) continue;
+        bricks.push({x: sx + rx*8, y: sy + ry*8, w:8, h:8, hp:2});
+      }
+    }
+    s.push(bricks);
+  }
+  return s;
+}
 
-// buttons
-startBtn.addEventListener('click', ()=>{startGame()});
-muteBtn.addEventListener('click', ()=>{soundOn=!soundOn; muteBtn.textContent = soundOn? 'Toggle Sound' : 'Sound Off';});
+// World init/reset
+function spawnAliens(){
+  aliens = [];
+  const rows = 5, cols = 11;
+  const startX = 60, startY=60;
+  const spacingX = 46, spacingY = 36;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const type = r===0?0:(r<3?1:2);
+      aliens.push(new Alien(startX + c*spacingX, startY + r*spacingY, type));
+    }
+  }
+  alienDir = 1;
+  alienSpeed = alienBaseSpeed + (level-1)*4;
+  fireInterval = Math.max(0.35, 1.3 - (level-1)*0.08);
+}
 
-function startGame(){ if(gameState==='playing') return; resetGame(); gameState='playing'; lastTime = performance.now(); loop(lastTime);} 
+function resetAndStart(){
+  score = 0; lives = 3; level = 1; updateHUD();
+  startGame();
+}
 
-// ======= Collision helpers =======
-function rectIntersect(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by}
+function startGame(){
+  // resume audio context on interaction
+  if(typeof AudioContext !== 'undefined') {
+    try { ensureAudio(); if(audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
+  }
+  player = new Player();
+  bullets = [];
+  spawnAliens();
+  shields = makeShields();
+  ufo = new UFO();
+  gameState = 'playing';
+  alienAnim = 0; alienAnimTimer = 0;
+  fireTimer = 0;
+  lastTime = performance.now();
+  startMarchingLoop();
+  loop(lastTime);
+}
 
-// ======= Game loop =======
-let lastTime = 0; function loop(t){
-  const dt = Math.min(0.05, (t - lastTime)/1000); lastTime = t;
-  update(dt); render();
-  if(gameState==='playing') requestAnimationFrame(loop);
+function endGame(){
+  gameState = 'gameover';
+  stopMarchingLoop();
+  playBeep(80,0.6,'sawtooth',0.12);
+  saveHighScore(score);
+  updateHighScoreList();
+}
+
+function updateHUD(){
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  levelEl.textContent = level;
+}
+
+// High scores
+function saveHighScore(s){
+  const key = 'si_highscores_v1';
+  const arr = JSON.parse(localStorage.getItem(key) || '[]');
+  arr.push({score: s, date: Date.now()});
+  arr.sort((a,b)=>b.score - a.score);
+  const top = arr.slice(0,10);
+  localStorage.setItem(key, JSON.stringify(top));
+}
+function readHighScores(){
+  return JSON.parse(localStorage.getItem('si_highscores_v1') || '[]');
+}
+function updateHighScoreList(){
+  const top = readHighScores();
+  hsList.innerHTML = '';
+  for(let i=0;i<top.length;i++){
+    const li = document.createElement('li');
+    const d = new Date(top[i].date);
+    li.textContent = `${top[i].score} — ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+    hsList.appendChild(li);
+  }
+}
+updateHighScoreList();
+
+// Game loop & update
+function loop(ts){
+  const dt = Math.min(0.05, (ts - lastTime)/1000);
+  lastTime = ts;
+  update(dt);
+  render();
+  if(gameState === 'playing') requestAnimationFrame(loop);
 }
 
 function update(dt){
-  // player input
-  let dir = 0; if(keys['arrowleft']||keys['a']) dir=-1; if(keys['arrowright']||keys['d']) dir=1;
-  player.update(dt, dir);
-  if((keys[' ']||keys['space']) && player.canShoot()){ // shoot
-    bullets.push(new Bullet(player.x + player.w/2, player.y - 10*scale, -420*scale));
-    player.shoot(); beep(880,0.05,'square',0.06);
-  }
+  if(gameState!=='playing') return;
+  player.update(dt);
 
   // bullets
-  bullets.forEach(b=>b.update(dt));
-  bullets = bullets.filter(b=>b.y > -20 && b.y < H+20);
+  for(let b of bullets) b.update(dt);
+  bullets = bullets.filter(b => b.y > -40 && b.y < H + 40);
 
-  // invader movement
-  invTimer += dt;
-  // speed grows as fewer invaders remain
-  const living = invaders.filter(i=>i.alive);
-  const speedFactor = 1 + (40 - living.length)/40; // modest speedup
-  let moveX = invSpeed * invDir * speedFactor * dt;
-  let shouldDrop = false;
-  for(let inv of living){
-    inv.x += moveX;
-    if(inv.x < 8*scale || inv.x + inv.w > W - 8*scale) shouldDrop = true;
+  // aliens movement
+  let edge = false;
+  const living = aliens.filter(a=>a.alive);
+  const speedFactor = 1 + ( (11*5 - living.length) / (11*5) ) * 0.9; // speed up gradually
+  for(let a of living){
+    a.x += alienDir * alienSpeed * speedFactor * dt;
+    if(a.x < 12 || a.x + a.w > W - 12) edge = true;
   }
-  if(shouldDrop){ invDir *= -1; for(let inv of living){ inv.y += invDrop; } }
+  if(edge){
+    alienDir *= -1;
+    for(let a of living) a.y += 20;
+  }
 
-  // invaders shooting
-  if(invTimer > invFireRate){
-    invTimer = 0; // pick a random bottom invader from a column
+  // alien animation
+  alienAnimTimer += dt;
+  if(alienAnimTimer > Math.max(0.18, 0.6 * (living.length / (11*5)))){
+    alienAnimTimer = 0;
+    alienAnim++;
+  }
+
+  // AI firing — only frontline invaders per column
+  fireTimer += dt;
+  if(fireTimer > fireInterval){
+    fireTimer = 0;
+    // determine frontline per column
     const columns = {};
-    living.forEach(i=>{ const c = Math.round((i.x - 60*scale) / ( (W - 120*scale - 34*scale)/(11-1) )); if(!columns[c] || columns[c].y < i.y) columns[c] = i; });
-    const choices = Object.values(columns);
-    if(choices.length){ const shooter = choices[Math.floor(Math.random()*choices.length)]; bullets.push(new Bullet(shooter.x + shooter.w/2, shooter.y + shooter.h + 6*scale, 220*scale, false)); beep(220,0.06,'sine',0.08); }
-  }
-
-  // bullet collisions
-  for(let b of bullets.filter(x=>x.friend!==false)){
-    for(let inv of invaders){ if(inv.alive && rectIntersect(b.x-4*scale,b.y-6*scale,8*scale,8*scale,inv.x,inv.y,inv.w,inv.h)){
-      inv.alive = false; b.y = -999; score += 10 + (5 * (4 - inv.row)); beep(1200,0.04,'triangle',0.06); updateUI(); break; }
+    living.forEach(a=>{
+      const col = Math.round((a.x - 60) / 46);
+      if(!columns[col] || columns[col].y < a.y) columns[col] = a;
+    });
+    const shooters = Object.values(columns);
+    if(shooters.length){
+      // choose randomly among columns (more predictable than fully random per bullet pop)
+      const shooter = shooters[Math.floor(Math.random() * shooters.length)];
+      bullets.push(new Bullet(shooter.x + shooter.w/2, shooter.y + shooter.h + 6, 150 + level*10, false));
+      playBeep(220, 0.06, 'sine', 0.07);
     }
   }
 
-  // invader bullet hits player
-  for(let b of bullets.filter(x=>x.friend===false)){
-    if(rectIntersect(b.x-4*scale,b.y-6*scale,8*scale,8*scale,player.x,player.y,player.w,player.h)){
-      b.y = H + 999; lives -= 1; beep(140,0.2,'sawtooth',0.1); updateUI(); if(lives<=0) endGame(); else { player.x = W/2 - player.w/2; bullets = bullets.filter(x=>x.friend); }
+  // UFO spawn occasionally
+  if(!ufo.active){
+    if(Math.random() < 0.002 + level*0.001) ufo.spawn();
+  } else {
+    ufo.update(dt);
+  }
+
+  // collisions: player bullets vs aliens
+  for(let b of bullets.filter(bb=>bb.friend)){
+    for(let a of aliens){
+      if(a.alive && rectIntersect(b.x-2,b.y-6,4,8, a.x, a.y, a.w, a.h)){
+        a.alive = false;
+        b.y = -9999;
+        score += ALIEN_POINTS[a.type];
+        playBeep(1400, 0.06, 'triangle', 0.06);
+        updateHUD();
+        // speed up marching loop reaction by restarting it
+        stopMarchingLoop(); startMarchingLoop();
+      }
     }
   }
 
-  // if invaders reach bottom -> gameover
-  if(invaders.some(i=>i.alive && i.y + i.h >= player.y)) { endGame(); }
+  // bullets vs player
+  for(let b of bullets.filter(bb=>!bb.friend)){
+    if(rectIntersect(b.x-2,b.y-6,4,8, player.x, player.y, player.w, player.h)){
+      b.y = H + 999;
+      lives--;
+      playBeep(160,0.18,'sawtooth',0.1);
+      updateHUD();
+      if(lives <= 0){ endGame(); }
+      else {
+        // reset player position and clear enemy bullets
+        player.x = W/2 - player.w/2;
+        bullets = bullets.filter(x=> x.friend );
+      }
+    }
+  }
 
-  // win condition
-  if(invaders.every(i=>!i.alive)){
-    // victory — spawn next wave with speedup
-    invSpeed *= 1.15; invFireRate = Math.max(0.4, invFireRate - 0.08);
-    spawnInvaders(); beep(1600,0.2,'sine',0.08);
+  // bullets vs shields
+  for(let brInd = 0; brInd < shields.length; brInd++){
+    let shield = shields[brInd];
+    for(let brick of shield){
+      if(brick.hp <= 0) continue;
+      for(let b of bullets){
+        if(rectIntersect(b.x-2,b.y-6,4,8, brick.x, brick.y, brick.w, brick.h)){
+          // damage
+          b.y = (b.friend? -999 : H + 999);
+          brick.hp -= (b.friend ? 1 : 1);
+          if(brick.hp <= 0){
+            // destroy brick
+          }
+        }
+      }
+    }
+  }
+
+  // bullets vs UFO
+  if(ufo.active){
+    for(let b of bullets.filter(bb=>bb.friend)){
+      if(rectIntersect(b.x-2,b.y-6,4,8, ufo.x, ufo.y, 40, 20)){
+        score += ufo.value;
+        playBeep(1800,0.12,'triangle',0.08);
+        ufo.active = false;
+        b.y = -9999;
+        updateHUD();
+      }
+    }
+  }
+
+  // clear dead aliens => level up
+  if(aliens.every(a=>!a.alive)){
+    level++;
+    // small bonus
+    score += 100 * level;
+    spawnAliens();
+    shields = makeShields();
+    player.x = W/2 - player.w/2;
+    bullets = [];
+    updateHUD();
+    playBeep(1600, 0.18, 'sine', 0.07);
   }
 }
 
-function endGame(){ gameState='gameover'; beep(80,0.6,'sawtooth',0.12); startBtn.textContent = 'RESTART'; }
+// rectangle intersection
+function rectIntersect(ax,ay,aw,ah, bx,by,bw,bh){
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
 
-function updateUI(){ scoreEl.textContent = score; livesEl.textContent = lives; }
-
-// ======= Rendering =======
+// Rendering
 function render(){
-  // clear with slight vignette
-  ctx.fillStyle = BG; ctx.fillRect(0,0,W,H);
+  // clear
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,W,H);
 
-  // stars
-  for(let i=0;i<60;i++){ ctx.fillStyle = (i%7===0)?'#0d3':'#053'; ctx.fillRect((i*97)%W, (i*37)%H, 1*scale, 1*scale); }
+  // stars background (simple)
+  drawStars();
 
-  // draw invaders
-  for(let inv of invaders){ if(!inv.alive) continue; drawInvader(inv); }
+  // aliens
+  for(let a of aliens){
+    if(a.alive) a.draw(alienAnim);
+  }
 
-  // draw player
+  // UFO
+  if(ufo.active) ufo.draw();
+
+  // shields
+  for(let s of shields){
+    for(let b of s){
+      if(b.hp>0){
+        ctx.fillStyle = b.hp===2 ? '#7CFF9A' : '#4DA973';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+      }
+    }
+  }
+
+  // player
   player.draw();
 
-  // draw bullets
-  bullets.forEach(b=>b.draw());
+  // bullets
+  for(let b of bullets) b.draw();
 
-  // HUD scanline glow
-  ctx.fillStyle = 'rgba(110,255,154,0.03)'; ctx.fillRect(0,H-90*scale,W,90*scale);
-
-  // scoreboard overlay
-  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(6*scale,6*scale,200*scale,34*scale);
-  ctx.fillStyle = PH; ctx.font = (18*scale)+'px monospace'; ctx.fillText('SCORE: ' + score, 12*scale, 30*scale);
-}
-
-function drawInvader(inv){
-  // tiny chunky shape, different per row
-  const x = inv.x, y = inv.y, w = inv.w, h = inv.h;
-  ctx.fillStyle = PH;
-  // simple block invader by drawing rectangles for a pixel-art effect
-  const px = Math.round(w/8), py = Math.round(h/8);
-  for(let rx=0;rx<8;rx++){
-    for(let ry=0;ry<8;ry++){
-      // pattern based on row to get variety
-      const mask = ( ( (rx+ry*3 + inv.row) % 5) < 3 );
-      if(mask) ctx.fillRect(x + rx*px, y + ry*py, px-1, py-1);
-    }
-  }
-}
-
-// ======= Resize handling (for responsive embed) =======
-function resizeCanvas(){
-  // Keep internal resolution fixed for pixelated effect, but scale via css already set.
-  // If embed is small, we can reduce internal resolution.
-  const rect = canvas.getBoundingClientRect();
-  const cssW = Math.max(320, Math.round(rect.width));
-  const cssH = Math.max(240, Math.round(rect.height));
-  canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
-}
-window.addEventListener('resize', resizeCanvas); resizeCanvas();
-
-// focus for keyboard
-canvas.addEventListener('click', ()=>{ canvas.focus(); if(audioCtx.state==='suspended') audioCtx.resume(); });
-
-// initial spawn
-spawnInvaders(); updateUI();
-
-// autofocus start button
-startBtn.focus();
-
-// draw a little demo when in menu
-function drawMenu(){
-  ctx.fillStyle = BG; ctx.fillRect(0,0,W,H);
-  // small animated demo invaders
-  ctx.fillStyle = PH; ctx.font = '18px monospace'; ctx.fillText('PRESS START', W/2 - 60, H/2 - 10);
-}
-function menuLoop(t){ if(gameState==='menu'){ drawMenu(); requestAnimationFrame(menuLoop); } }
-menuLoop();
-
-</script>
-</body>
-</html>
+  // HUD overlay
+  ctx.fillStyle = 'rgba(124,255,154,0.04)';
+  ctx.fillRect(6,6,220,28);
+  ctx.fillStyle = '#7CFF9A';
+  ctx.font = '18px monospace';
+  ctx.
