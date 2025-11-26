@@ -1,582 +1,406 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Classic Space Invaders — Retro</title>
-<style>
-  :root{
-    --bg:#000;
-    --ph:#7CFF9A;
-    --accent:#9ef7b9;
-    --panel:#071309;
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#001000,#000);font-family:monospace;color:var(--ph);display:flex;align-items:center;justify-content:center}
-  .container{width:960px;max-width:96vw;padding:14px;box-sizing:border-box}
-  h1{margin:0 0 8px 0;font-size:20px;letter-spacing:2px}
-  #uiTop{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px}
-  #hud{display:flex;gap:18px;align-items:center}
-  .hudItem{font-size:14px}
-  button{background:transparent;border:1px solid var(--ph);color:var(--ph);padding:8px 10px;border-radius:6px;cursor:pointer}
-  button.primary{background:var(--ph);color:#021409;font-weight:700}
-
-  .stageWrap{display:flex;gap:12px}
-  canvas#stage{background:#000;width:720px;height:540px;image-rendering:pixelated;border:3px solid rgba(124,255,154,0.08);display:block}
-  .sidebar{flex:1;min-width:220px;background:linear-gradient(180deg,var(--panel),#021407);padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,0.03)}
-  .sidebar h3{margin:0 0 8px 0;font-size:14px}
-  .scoreBig{font-size:28px;font-weight:700}
-  .controls{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-  .touchControls{display:none;margin-top:10px}
-  .touchControls .row{display:flex;gap:8px}
-  .touchBtn{flex:1;padding:14px;border-radius:8px;border:1px solid var(--ph);background:transparent;color:var(--ph);font-size:18px}
-  .highscores{font-size:13px;margin-top:8px}
-  footer{margin-top:8px;font-size:12px;color:#9ef7b988}
-
-  /* responsive */
-  @media (max-width:980px){
-    .stageWrap{flex-direction:column;align-items:center}
-    canvas#stage{width:92vw;height:69vw}
-    .touchControls{display:block}
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Space Invaders — Single File</title>
+  <style>
+    /* Minimal, modern styling */
+    :root{ --bg:#061021; --fg:#e6f7ff; --accent:#57c7ff; }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#02111a 0%, var(--bg) 100%); color:var(--fg);}
+    .wrap{max-width:960px;margin:24px auto;padding:16px;display:grid;gap:12px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:1.1rem;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--fg);padding:8px 10px;border-radius:8px;cursor:pointer}
+    button:hover{border-color:rgba(255,255,255,0.14)}
+    canvas{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 8px 30px rgba(2,10,20,0.6);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15));}
+    .info{display:flex;gap:12px;align-items:center;color:rgba(230,247,255,0.85)}
+    .hint{font-size:0.85rem;opacity:0.9}
+    footer{font-size:0.8rem;opacity:0.8}
+    @media (max-width:520px){header{flex-direction:column;align-items:flex-start}}
+  </style>
 </head>
 <body>
-<div class="container">
-  <div id="uiTop">
-    <div>
-      <h1>Space Patrol — 1978 Tribute</h1>
-      <div style="color:#9ef7b9aa;font-size:12px">Keyboard: ← → or A/D to move, Space to shoot. Mobile: on-screen controls.</div>
-    </div>
-    <div id="hud">
-      <div class="hudItem">SCORE: <span id="score">0</span></div>
-      <div class="hudItem">LIVES: <span id="lives">3</span></div>
-      <div class="hudItem">LEVEL: <span id="level">1</span></div>
-      <button id="startBtn" class="primary">START</button>
-      <button id="muteBtn">MUTE</button>
-    </div>
-  </div>
-
-  <div class="stageWrap">
-    <canvas id="stage" width="720" height="540" tabindex="0"></canvas>
-
-    <aside class="sidebar">
-      <h3>Controls</h3>
-      <div>Keyboard: Arrow keys / A-D to move, Space to shoot.</div>
+  <div class="wrap">
+    <header>
+      <h1>Space Invaders — Single-file HTML</h1>
       <div class="controls">
-        <button id="restartBtn">Restart</button>
-        <button id="toggleSoundBtn">Toggle Sound</button>
-      </div>
-
-      <div class="highscores">
-        <h3>Top Scores</h3>
-        <ol id="hsList" style="padding-left:18px;margin-top:6px"></ol>
-      </div>
-
-      <div class="touchControls" id="touchControls">
-        <h3>Touch</h3>
-        <div class="row">
-          <button class="touchBtn" id="leftTouch">◀</button>
-          <button class="touchBtn" id="shootTouch">●</button>
-          <button class="touchBtn" id="rightTouch">▶</button>
+        <button id="btn-start">Start / Restart</button>
+        <div class="info">
+          <div>Score: <span id="score">0</span></div>
+          <div style="width:1px;height:18px;background:rgba(255,255,255,0.06);margin:0 6px"></div>
+          <div>Lives: <span id="lives">3</span></div>
         </div>
       </div>
+    </header>
 
-      <div style="margin-top:10px;font-size:12px;color:#9ef7b9aa">
-        Tip: You can play instantly — open a blank tab, open the console and paste: <code>const w=window.open();w.document.write(`...`);w.document.close();</code> and paste this whole HTML string where the dots are.
-      </div>
-    </aside>
+    <canvas id="game" width="800" height="560" aria-label="Space invaders game canvas"></canvas>
+
+    <div class="hint">Controls: ← / → to move, Space to shoot. Mobile: tap left/right sides to move, tap bottom to shoot.</div>
+    <footer>Copy this file to GitHub (name it <code>space-invaders.html</code>) and open in a browser to play.</footer>
   </div>
 
-  <footer>Made with WebAudio & Canvas — Retro green phosphor vibes ✦</footer>
-</div>
-
 <script>
-/* ============================
-   Classic Space Invaders Clone
-   Single-file HTML — no external assets
-   Features:
-     - Multiple alien types and point values
-     - Two-frame alien animations
-     - Marching loop sound (WebAudio) whose tempo depends on remaining aliens
-     - Shields that take damage
-     - UFO bonus ship
-     - Frontline-only invader firing
-     - Levels, localStorage highscores, mobile controls
-   ============================ */
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width, H = canvas.height;
 
-// Canvas setup
-const canvas = document.getElementById('stage');
-const ctx = canvas.getContext('2d');
-let W = canvas.width, H = canvas.height;
+  // DOM UI
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const btnStart = document.getElementById('btn-start');
 
-// HUD elements
-const scoreEl = document.getElementById('score');
-const livesEl = document.getElementById('lives');
-const levelEl = document.getElementById('level');
-const startBtn = document.getElementById('startBtn');
-const restartBtn = document.getElementById('restartBtn');
-const muteBtn = document.getElementById('muteBtn');
-const toggleSoundBtn = document.getElementById('toggleSoundBtn');
-const hsList = document.getElementById('hsList');
+  // Game state
+  let game = null;
 
-let soundOn = true;
-let audioCtx = null;
+  function resetGame(){
+    game = {
+      over: false,
+      running: false,
+      score: 0,
+      lives: 3,
+      level: 1,
+      player: {
+        w: 48, h: 20, x: W/2 - 24, y: H - 60, speed: 4, bullets: [], cooldown: 0
+      },
+      aliens: [],
+      alienBullets: [],
+      alienDir: 1,
+      alienSpeed: 0.4,
+      frames: 0,
+      shields: []
+    };
+    createAliens();
+    createShields();
+    updateUI();
+  }
 
-// Game state
-let score = 0, lives = 3, level = 1;
-let gameState = 'menu'; // menu, playing, gameover
-let player, bullets, aliens, shields, ufo;
-let alienDir = 1, alienBaseSpeed = 14, alienSpeed = 14;
-let alienAnim = 0, alienAnimTimer = 0;
-let fireTimer = 0, fireInterval = 1.2;
-let lastTime = 0;
-let marchIntervalId = null;
+  function createAliens(){
+    const rows = 5, cols = 10;
+    const paddingX = 18, paddingY = 16;
+    const startX = 60, startY = 60;
+    game.aliens = [];
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        game.aliens.push({x:startX + c*(40+paddingX), y:startY + r*(28+paddingY), w:36, h:22, row:r, alive:true});
+      }
+    }
+  }
 
-// Input
-const keys = {left:false, right:false, shoot:false};
-window.addEventListener('keydown', e=>{
-  if(e.key==='ArrowLeft' || e.key.toLowerCase()==='a') keys.left=true;
-  if(e.key==='ArrowRight' || e.key.toLowerCase()==='d') keys.right=true;
-  if(e.key===' ' || e.key.toLowerCase()==='w') keys.shoot=true;
-  if(e.key==='Enter' && gameState!=='playing') startGame();
-});
-window.addEventListener('keyup', e=>{
-  if(e.key==='ArrowLeft' || e.key.toLowerCase()==='a') keys.left=false;
-  if(e.key==='ArrowRight' || e.key.toLowerCase()==='d') keys.right=false;
-  if(e.key===' ' || e.key.toLowerCase()==='w') keys.shoot=false;
-});
+  function createShields(){
+    game.shields = [];
+    const count = 4;
+    for(let i=0;i<count;i++){
+      const sw = 68, sh = 36;
+      const x = 80 + i*( (W-160)/(count-1) );
+      const y = H - 150;
+      // Represent shield as simple grid of pixels
+      const grid = [];
+      const cols = 12, rows = 6;
+      for(let r=0;r<rows;r++){
+        grid[r]=[];
+        for(let c=0;c<cols;c++) grid[r][c]=1; // 1 = intact
+      }
+      game.shields.push({x: x - sw/2, y, w:sw, h:sh, cols, rows, grid});
+    }
+  }
 
-// Touch buttons
-document.getElementById('leftTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.left=true});
-document.getElementById('leftTouch').addEventListener('touchend',e=>{keys.left=false});
-document.getElementById('rightTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.right=true});
-document.getElementById('rightTouch').addEventListener('touchend',e=>{keys.right=false});
-document.getElementById('shootTouch').addEventListener('touchstart',e=>{e.preventDefault(); keys.shoot=true});
-document.getElementById('shootTouch').addEventListener('touchend',e=>{keys.shoot=false});
+  // Input
+  const keys = {left:false,right:false,shoot:false};
+  window.addEventListener('keydown', e => {
+    if(e.code==='ArrowLeft'||e.code==='KeyA') keys.left=true;
+    if(e.code==='ArrowRight'||e.code==='KeyD') keys.right=true;
+    if(e.code==='Space') keys.shoot=true;
+  });
+  window.addEventListener('keyup', e => {
+    if(e.code==='ArrowLeft'||e.code==='KeyA') keys.left=false;
+    if(e.code==='ArrowRight'||e.code==='KeyD') keys.right=false;
+    if(e.code==='Space') keys.shoot=false;
+  });
 
-// Buttons
-startBtn.addEventListener('click', ()=>{ if(gameState!=='playing') startGame(); });
-restartBtn.addEventListener('click', ()=>{ resetAndStart(); });
-muteBtn.addEventListener('click', ()=>{ soundOn=!soundOn; updateMuteUI(); });
-toggleSoundBtn.addEventListener('click', ()=>{ soundOn=!soundOn; updateMuteUI(); });
+  // Mobile/touch simple controls
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    handleTouch(t.clientX, t.clientY, true);
+  }, {passive:false});
+  canvas.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
+  canvas.addEventListener('touchend', e => {
+    keys.left=false; keys.right=false; keys.shoot=false;
+  });
+  canvas.addEventListener('mousedown', e => {
+    handleTouch(e.clientX, e.clientY, true);
+  });
+  canvas.addEventListener('mouseup', e => { keys.left=false; keys.right=false; keys.shoot=false; });
 
-function updateMuteUI(){ muteBtn.textContent = soundOn? 'MUTE' : 'UNMUTE'; toggleSoundBtn.textContent = soundOn? 'Sound ON' : 'Sound OFF'; }
+  function handleTouch(cx, cy, down){
+    const rect = canvas.getBoundingClientRect();
+    const x = cx - rect.left;
+    const y = cy - rect.top;
+    if(y > H*0.75) { keys.shoot = true; }
+    else if(x < W/2) { keys.left = true; keys.right=false; }
+    else { keys.right = true; keys.left=false; }
+  }
 
-// Audio helpers (WebAudio)
-function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-function playBeep(freq=800, time=0.08, type='square', vol=0.08){
-  if(!soundOn) return;
-  ensureAudio();
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.value = vol;
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start();
-  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time);
-  o.stop(audioCtx.currentTime + time + 0.02);
-}
+  btnStart.addEventListener('click', ()=>{
+    resetGame();
+    game.running = true;
+    game.over = false;
+  });
 
-// marching loop: schedule a sequence of tones. Tempo varies by remaining aliens.
-let marchStep = 0;
-function startMarchingLoop(){
-  stopMarchingLoop();
-  ensureAudio();
-  marchStep = 0;
+  function updateUI(){
+    scoreEl.textContent = game.score;
+    livesEl.textContent = game.lives;
+  }
+
+  // Game loop
+  function loop(){
+    requestAnimationFrame(loop);
+    if(!game) resetGame();
+    if(!game.running) { drawIntro(); return; }
+    step();
+    draw();
+  }
+
   function step(){
-    if(!soundOn) return;
-    const alive = aliens ? aliens.filter(a=>a.alive).length : 0;
-    const baseTempo = Math.max(0.12, 0.6 * (alive / (11*5))); // fewer aliens -> faster -> smaller interval
-    // Rotate through 4-step pattern
-    const freqs = [880,660,540,440];
-    const f = freqs[marchStep % freqs.length] * (1 + (level-1)*0.03);
-    playBeep(f, 0.08, 'sawtooth', 0.05);
-    marchStep++;
-    // Set next
-    marchIntervalId = setTimeout(step, Math.max(70, baseTempo*1000));
-  }
-  step();
-}
-function stopMarchingLoop(){ if(marchIntervalId) { clearTimeout(marchIntervalId); marchIntervalId = null; } }
+    game.frames++;
+    // player movement
+    if(keys.left) game.player.x -= game.player.speed;
+    if(keys.right) game.player.x += game.player.speed;
+    game.player.x = Math.max(10, Math.min(W - game.player.w - 10, game.player.x));
 
-// Entities & world
-class Player {
-  constructor(){ this.w=36; this.h=18; this.x=W/2 - this.w/2; this.y=H-58; this.speed=260; this.cool=0; this.cooldown=0.35; }
-  update(dt){
-    if(keys.left) this.x -= this.speed*dt;
-    if(keys.right) this.x += this.speed*dt;
-    this.x = Math.max(10, Math.min(W - this.w - 10, this.x));
-    this.cool = Math.max(0, this.cool - dt);
-    if(keys.shoot && this.cool===0){ bullets.push(new Bullet(this.x + this.w/2, this.y - 6, -380, true)); this.cool = this.cooldown; playBeep(1200,0.06,'square',0.07); }
-  }
-  draw(){
-    // draw simple ship (pixel style)
-    ctx.fillStyle = '#7CFF9A';
-    const sprite = [
-      '0011100',
-      '0111110',
-      '1111111',
-      '1111111'
-    ];
-    drawSprite(sprite, this.x, this.y, 4);
-  }
-}
-
-class Bullet {
-  constructor(x,y,vy,friend){ this.x = x; this.y = y; this.vy = vy; this.friend = friend; this.r = 3; }
-  update(dt){ this.y += this.vy * dt; }
-  draw(){ ctx.fillStyle = this.friend ? '#7CFF9A' : '#FF7B7B'; ctx.fillRect(this.x-2, this.y-6, 4, 8); }
-}
-
-class Alien {
-  constructor(x,y,type){ this.x=x; this.y=y; this.type=type; this.alive=true; this.w=28; this.h=20; }
-  draw(frame){
-    ctx.fillStyle = '#7CFF9A';
-    const sprites = ALIEN_SPRITES[this.type];
-    drawSprite(sprites[frame%2], this.x, this.y, 4);
-  }
-}
-
-class UFO {
-  constructor(){ this.active=false; this.x= -80; this.y=35; this.v=90; this.dir=1; this.value=0; }
-  spawn(){
-    this.active = true;
-    this.dir = Math.random() < 0.5 ? 1 : -1;
-    this.x = this.dir===1 ? -80 : W+80;
-    this.y = 40;
-    this.v = 80 + Math.random()*80;
-    this.value = [50,100,150,300][Math.floor(Math.random()*4)];
-  }
-  update(dt){
-    if(!this.active) return;
-    this.x += this.v * this.dir * dt;
-    if(this.x < -100 || this.x > W+100) this.active=false;
-  }
-  draw(){
-    if(!this.active) return;
-    ctx.fillStyle = '#FFE88A';
-    const s = ['00111100','01111110','11111111','01111110','00111100'];
-    drawSprite(s, this.x, this.y, 3);
-    // score label
-    ctx.font = '12px monospace';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(this.value, this.x+10, this.y-6);
-  }
-}
-
-// Pixel sprite helper: sprite array of strings '0'/'1'
-function drawSprite(sprite, x, y, size){
-  ctx.fillStyle = '#7CFF9A';
-  for(let r=0;r<sprite.length;r++){
-    const row = sprite[r];
-    for(let c=0;c<row.length;c++){
-      if(row[c]==='1') ctx.fillRect(Math.round(x + c*size), Math.round(y + r*size), size, size);
+    // shooting
+    if(game.player.cooldown>0) game.player.cooldown--;
+    if(keys.shoot && game.player.cooldown===0){
+      game.player.bullets.push({x:game.player.x+game.player.w/2, y:game.player.y-8, r:4, speed:8});
+      game.player.cooldown = 14; // frames
+      // one-shot per press for keyboard; for hold, allow short auto-fire
+      if(!('ontouchstart' in window)) keys.shoot=false;
     }
-  }
-}
 
-// Alien sprites (two-frame animation each; 3 types with different shapes)
-const ALIEN_SPRITES = [
-  // Type 0 - top (worth 30)
-  [
-    ['0010100','0111110','1010101','1111111','0101010'],
-    ['0010100','0111110','1011101','1111111','0101010']
-  ],
-  // Type 1 - middle (worth 20)
-  [
-    ['0011100','0110110','1111111','0101010','0011000'],
-    ['0011100','0110110','1111111','0111110','0011000']
-  ],
-  // Type 2 - bottom (worth 10)
-  [
-    ['0010100','0111110','1111111','0111110','0010100'],
-    ['0010100','0111110','1111111','1111111','0010100']
-  ]
-];
-const ALIEN_POINTS = [30,20,10];
+    // update bullets
+    game.player.bullets.forEach(b => b.y -= b.speed);
+    game.player.bullets = game.player.bullets.filter(b => b.y > -10);
 
-// Shields: each shield is a grid of bricks
-function makeShields(){
-  const s = [];
-  const shieldCount = 4;
-  const shieldWidth = 56;
-  const startX = 80;
-  const gap = (W - startX*2 - shieldWidth*shieldCount) / (shieldCount-1);
-  for(let i=0;i<shieldCount;i++){
-    const sx = startX + i*(shieldWidth + gap);
-    const sy = H - 170;
-    // create bricks grid 7x5
-    const bricks = [];
-    for(let ry=0;ry<5;ry++){
-      for(let rx=0;rx<7;rx++){
-        // leave center top holes to mimic original shield shapes
-        if(ry===0 && (rx===2 || rx===4)) continue;
-        bricks.push({x: sx + rx*8, y: sy + ry*8, w:8, h:8, hp:2});
+    // aliens movement: move horizontally; if edge hit, move down and reverse
+    const leftMost = Math.min(...game.aliens.filter(a=>a.alive).map(a=>a.x), W);
+    const rightMost = Math.max(...game.aliens.filter(a=>a.alive).map(a=>a.x + a.w), 0);
+    if(rightMost + game.alienSpeed*game.alienDir > W - 10 || leftMost + game.alienSpeed*game.alienDir < 10) {
+      // move down
+      game.aliens.forEach(a=>a.y += 20);
+      game.alienDir *= -1;
+    } else {
+      game.aliens.forEach(a=>a.x += game.alienSpeed*game.alienDir);
+    }
+
+    // aliens randomly shoot depending on level and count
+    if(game.frames % Math.max(10, 90 - game.level*6) === 0){
+      const shooters = groupByColumnAlive();
+      if(shooters.length){
+        const s = shooters[Math.floor(Math.random()*shooters.length)];
+        game.alienBullets.push({x: s.x + s.w/2, y: s.y + s.h + 6, r:4, speed:3 + game.level*0.2});
       }
     }
-    s.push(bricks);
-  }
-  return s;
-}
 
-// World init/reset
-function spawnAliens(){
-  aliens = [];
-  const rows = 5, cols = 11;
-  const startX = 60, startY=60;
-  const spacingX = 46, spacingY = 36;
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const type = r===0?0:(r<3?1:2);
-      aliens.push(new Alien(startX + c*spacingX, startY + r*spacingY, type));
-    }
-  }
-  alienDir = 1;
-  alienSpeed = alienBaseSpeed + (level-1)*4;
-  fireInterval = Math.max(0.35, 1.3 - (level-1)*0.08);
-}
+    // update alien bullets
+    game.alienBullets.forEach(b => b.y += b.speed);
+    game.alienBullets = game.alienBullets.filter(b => b.y < H + 20);
 
-function resetAndStart(){
-  score = 0; lives = 3; level = 1; updateHUD();
-  startGame();
-}
-
-function startGame(){
-  // resume audio context on interaction
-  if(typeof AudioContext !== 'undefined') {
-    try { ensureAudio(); if(audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
-  }
-  player = new Player();
-  bullets = [];
-  spawnAliens();
-  shields = makeShields();
-  ufo = new UFO();
-  gameState = 'playing';
-  alienAnim = 0; alienAnimTimer = 0;
-  fireTimer = 0;
-  lastTime = performance.now();
-  startMarchingLoop();
-  loop(lastTime);
-}
-
-function endGame(){
-  gameState = 'gameover';
-  stopMarchingLoop();
-  playBeep(80,0.6,'sawtooth',0.12);
-  saveHighScore(score);
-  updateHighScoreList();
-}
-
-function updateHUD(){
-  scoreEl.textContent = score;
-  livesEl.textContent = lives;
-  levelEl.textContent = level;
-}
-
-// High scores
-function saveHighScore(s){
-  const key = 'si_highscores_v1';
-  const arr = JSON.parse(localStorage.getItem(key) || '[]');
-  arr.push({score: s, date: Date.now()});
-  arr.sort((a,b)=>b.score - a.score);
-  const top = arr.slice(0,10);
-  localStorage.setItem(key, JSON.stringify(top));
-}
-function readHighScores(){
-  return JSON.parse(localStorage.getItem('si_highscores_v1') || '[]');
-}
-function updateHighScoreList(){
-  const top = readHighScores();
-  hsList.innerHTML = '';
-  for(let i=0;i<top.length;i++){
-    const li = document.createElement('li');
-    const d = new Date(top[i].date);
-    li.textContent = `${top[i].score} — ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
-    hsList.appendChild(li);
-  }
-}
-updateHighScoreList();
-
-// Game loop & update
-function loop(ts){
-  const dt = Math.min(0.05, (ts - lastTime)/1000);
-  lastTime = ts;
-  update(dt);
-  render();
-  if(gameState === 'playing') requestAnimationFrame(loop);
-}
-
-function update(dt){
-  if(gameState!=='playing') return;
-  player.update(dt);
-
-  // bullets
-  for(let b of bullets) b.update(dt);
-  bullets = bullets.filter(b => b.y > -40 && b.y < H + 40);
-
-  // aliens movement
-  let edge = false;
-  const living = aliens.filter(a=>a.alive);
-  const speedFactor = 1 + ( (11*5 - living.length) / (11*5) ) * 0.9; // speed up gradually
-  for(let a of living){
-    a.x += alienDir * alienSpeed * speedFactor * dt;
-    if(a.x < 12 || a.x + a.w > W - 12) edge = true;
-  }
-  if(edge){
-    alienDir *= -1;
-    for(let a of living) a.y += 20;
-  }
-
-  // alien animation
-  alienAnimTimer += dt;
-  if(alienAnimTimer > Math.max(0.18, 0.6 * (living.length / (11*5)))){
-    alienAnimTimer = 0;
-    alienAnim++;
-  }
-
-  // AI firing — only frontline invaders per column
-  fireTimer += dt;
-  if(fireTimer > fireInterval){
-    fireTimer = 0;
-    // determine frontline per column
-    const columns = {};
-    living.forEach(a=>{
-      const col = Math.round((a.x - 60) / 46);
-      if(!columns[col] || columns[col].y < a.y) columns[col] = a;
-    });
-    const shooters = Object.values(columns);
-    if(shooters.length){
-      // choose randomly among columns (more predictable than fully random per bullet pop)
-      const shooter = shooters[Math.floor(Math.random() * shooters.length)];
-      bullets.push(new Bullet(shooter.x + shooter.w/2, shooter.y + shooter.h + 6, 150 + level*10, false));
-      playBeep(220, 0.06, 'sine', 0.07);
-    }
-  }
-
-  // UFO spawn occasionally
-  if(!ufo.active){
-    if(Math.random() < 0.002 + level*0.001) ufo.spawn();
-  } else {
-    ufo.update(dt);
-  }
-
-  // collisions: player bullets vs aliens
-  for(let b of bullets.filter(bb=>bb.friend)){
-    for(let a of aliens){
-      if(a.alive && rectIntersect(b.x-2,b.y-6,4,8, a.x, a.y, a.w, a.h)){
-        a.alive = false;
-        b.y = -9999;
-        score += ALIEN_POINTS[a.type];
-        playBeep(1400, 0.06, 'triangle', 0.06);
-        updateHUD();
-        // speed up marching loop reaction by restarting it
-        stopMarchingLoop(); startMarchingLoop();
+    // collisions: player bullets -> aliens
+    for(let i=game.player.bullets.length-1;i>=0;i--){
+      const b = game.player.bullets[i];
+      // aliens
+      for(let j=0;j<game.aliens.length;j++){
+        const a = game.aliens[j];
+        if(a.alive && collideCircleRect(b, a)){
+          a.alive = false; game.player.bullets.splice(i,1); game.score += 10 + (5 * (4 - a.row));
+          updateUI();
+          break;
+        }
       }
+      // shields
+      game.shields.forEach(sh => {
+        if(hitShield(sh, b)){
+          // remove bullet
+          const idx = game.player.bullets.indexOf(b);
+          if(idx>=0) game.player.bullets.splice(idx,1);
+        }
+      });
     }
-  }
 
-  // bullets vs player
-  for(let b of bullets.filter(bb=>!bb.friend)){
-    if(rectIntersect(b.x-2,b.y-6,4,8, player.x, player.y, player.w, player.h)){
-      b.y = H + 999;
-      lives--;
-      playBeep(160,0.18,'sawtooth',0.1);
-      updateHUD();
-      if(lives <= 0){ endGame(); }
-      else {
-        // reset player position and clear enemy bullets
-        player.x = W/2 - player.w/2;
-        bullets = bullets.filter(x=> x.friend );
+    // collisions: alien bullets -> player or shields
+    for(let i=game.alienBullets.length-1;i>=0;i--){
+      const b = game.alienBullets[i];
+      if(collideCircleRect(b, game.player)){
+        // hit player
+        game.alienBullets.splice(i,1);
+        game.lives -= 1; updateUI();
+        if(game.lives<=0) { game.running=false; game.over=true; }
+        continue;
       }
+      // shields
+      game.shields.forEach(sh => {
+        if(hitShield(sh, b)){
+          const idx = game.alienBullets.indexOf(b);
+          if(idx>=0) game.alienBullets.splice(idx,1);
+        }
+      });
+    }
+
+    // check if aliens reached player line
+    const lowestAlien = Math.max(...game.aliens.filter(a=>a.alive).map(a=>a.y + a.h), 0);
+    if(lowestAlien > game.player.y - 20) { game.running=false; game.over=true; }
+
+    // remove dead aliens; if none left, advance level
+    if(game.aliens.filter(a=>a.alive).length===0){
+      game.level++; game.alienSpeed += 0.15; createAliens(); createShields();
     }
   }
 
-  // bullets vs shields
-  for(let brInd = 0; brInd < shields.length; brInd++){
-    let shield = shields[brInd];
-    for(let brick of shield){
-      if(brick.hp <= 0) continue;
-      for(let b of bullets){
-        if(rectIntersect(b.x-2,b.y-6,4,8, brick.x, brick.y, brick.w, brick.h)){
-          // damage
-          b.y = (b.friend? -999 : H + 999);
-          brick.hp -= (b.friend ? 1 : 1);
-          if(brick.hp <= 0){
-            // destroy brick
-          }
+  function groupByColumnAlive(){
+    // pick bottom-most alien in each column
+    const cols = {};
+    game.aliens.forEach(a => { if(!a.alive) return; const key = Math.round(a.x/40); if(!cols[key] || a.row>cols[key].row) cols[key]=a; });
+    return Object.values(cols);
+  }
+
+  function collideCircleRect(c, r){
+    // r can be object with x,y,w,h or player with w,h
+    const rx = r.x, ry = r.y, rw = r.w, rh = r.h;
+    const dx = Math.abs(c.x - (rx + rw/2));
+    const dy = Math.abs(c.y - (ry + rh/2));
+    if(dx > (rw/2 + c.r)) return false;
+    if(dy > (rh/2 + c.r)) return false;
+    if(dx <= (rw/2)) return true;
+    if(dy <= (rh/2)) return true;
+    const dx1 = dx - rw/2, dy1 = dy - rh/2;
+    return (dx1*dx1 + dy1*dy1 <= c.r*c.r);
+  }
+
+  function hitShield(sh, bullet){
+    // map bullet coords into shield grid and clear a small area
+    const relX = bullet.x - sh.x; const relY = bullet.y - sh.y;
+    const cellW = sh.w / sh.cols, cellH = sh.h / sh.rows;
+    const c = Math.floor(relX / cellW), r = Math.floor(relY / cellH);
+    if(c>=0 && r>=0 && c<sh.cols && r<sh.rows && sh.grid[r][c]){
+      // clear a small pattern around c,r
+      for(let rr=r-1;rr<=r+1;rr++) for(let cc=c-1;cc<=c+1;cc++) if(rr>=0 && cc>=0 && rr<sh.rows && cc<sh.cols) sh.grid[rr][cc]=0;
+      return true;
+    }
+    return false;
+  }
+
+  // Drawing
+  function draw(){
+    // clear
+    ctx.clearRect(0,0,W,H);
+
+    // background stars
+    drawStars();
+
+    // draw shields
+    game.shields.forEach(drawShield);
+
+    // draw aliens
+    game.aliens.forEach(a => { if(!a.alive) return; drawAlien(a); });
+
+    // alien bullets
+    game.alienBullets.forEach(b => drawBullet(b, '#ffef7a'));
+
+    // player bullets
+    game.player.bullets.forEach(b => drawBullet(b, '#9ff'));
+
+    // player
+    drawPlayer(game.player);
+
+    // HUD
+    ctx.save(); ctx.font = '14px system-ui,Arial'; ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fillText('Level ' + game.level, 12, 20); ctx.restore();
+
+    if(game.over){
+      ctx.save(); ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0, H/2 - 48, W, 110);
+      ctx.fillStyle='white'; ctx.textAlign='center'; ctx.font='32px system-ui'; ctx.fillText('GAME OVER', W/2, H/2 - 6);
+      ctx.font='18px system-ui'; ctx.fillText('Click START to play again — Score: ' + game.score, W/2, H/2 + 26);
+      ctx.restore();
+    }
+  }
+
+  // draw helper functions
+  function drawStars(){
+    // subtle moving stars
+    ctx.save();
+    ctx.fillStyle = '#061a2a';
+    ctx.fillRect(0,0,W,H);
+    const count = 60;
+    for(let i=0;i<count;i++){
+      const x = (i*97 + game.frames*0.2) % W;
+      const y = (i*53 + (i%7)*19) % H;
+      const r = (i%3===0?1.3:0.6);
+      ctx.beginPath(); ctx.fillStyle = (i%5===0? 'rgba(255,255,255,0.08)': 'rgba(255,255,255,0.04)'); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawAlien(a){
+    ctx.save();
+    ctx.translate(a.x + a.w/2, a.y + a.h/2);
+    // simple pixel-looking alien shapes using rectangles
+    const color = (a.row%2===0)?'#7ef0ff':'#ffd47e';
+    ctx.fillStyle = color;
+    // body
+    ctx.fillRect(-a.w/2 + 6, -a.h/2 + 2, a.w - 12, a.h - 6);
+    // eyes
+    ctx.fillStyle = '#041018'; ctx.fillRect(-10, -2, 4, 4); ctx.fillRect(6, -2, 4, 4);
+    ctx.restore();
+  }
+
+  function drawPlayer(p){
+    ctx.save(); ctx.translate(p.x + p.w/2, p.y + p.h/2);
+    ctx.fillStyle = '#9ff'; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    // cockpit
+    ctx.fillStyle='#033'; ctx.fillRect(-12, -p.h/2, 8, p.h/1.5);
+    ctx.restore();
+  }
+
+  function drawBullet(b, color='#9ff'){
+    ctx.save(); ctx.beginPath(); ctx.fillStyle = color; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+
+  function drawShield(sh){
+    ctx.save();
+    const cellW = sh.w / sh.cols, cellH = sh.h / sh.rows;
+    for(let r=0;r<sh.rows;r++){
+      for(let c=0;c<sh.cols;c++){
+        if(sh.grid[r][c]){
+          const x = sh.x + c*cellW, y = sh.y + r*cellH;
+          ctx.fillStyle = 'rgba(120,200,180,0.95)';
+          ctx.fillRect(x+1, y+1, cellW-2, cellH-2);
         }
       }
     }
+    ctx.restore();
   }
 
-  // bullets vs UFO
-  if(ufo.active){
-    for(let b of bullets.filter(bb=>bb.friend)){
-      if(rectIntersect(b.x-2,b.y-6,4,8, ufo.x, ufo.y, 40, 20)){
-        score += ufo.value;
-        playBeep(1800,0.12,'triangle',0.08);
-        ufo.active = false;
-        b.y = -9999;
-        updateHUD();
-      }
-    }
+  // Resize handling
+  function fitCanvas(){
+    // keep internal resolution fixed but scale to container width
+    const containerWidth = Math.min(960, window.innerWidth - 48);
+    const scale = containerWidth / 800;
+    canvas.style.width = Math.round(800*scale)+'px';
+    canvas.style.height = Math.round(560*scale)+'px';
   }
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
 
-  // clear dead aliens => level up
-  if(aliens.every(a=>!a.alive)){
-    level++;
-    // small bonus
-    score += 100 * level;
-    spawnAliens();
-    shields = makeShields();
-    player.x = W/2 - player.w/2;
-    bullets = [];
-    updateHUD();
-    playBeep(1600, 0.18, 'sine', 0.07);
-  }
-}
+  // Start the loop
+  loop();
 
-// rectangle intersection
-function rectIntersect(ax,ay,aw,ah, bx,by,bw,bh){
-  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
-}
+  // Helpful: allow double-click to pause/unpause
+  canvas.addEventListener('dblclick', ()=>{ if(!game) return; game.running = !game.running; });
 
-// Rendering
-function render(){
-  // clear
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0,0,W,H);
+})();
+</script>
+</body>
+</html>
 
-  // stars background (simple)
-  drawStars();
-
-  // aliens
-  for(let a of aliens){
-    if(a.alive) a.draw(alienAnim);
-  }
-
-  // UFO
-  if(ufo.active) ufo.draw();
-
-  // shields
-  for(let s of shields){
-    for(let b of s){
-      if(b.hp>0){
-        ctx.fillStyle = b.hp===2 ? '#7CFF9A' : '#4DA973';
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-      }
-    }
-  }
-
-  // player
-  player.draw();
-
-  // bullets
-  for(let b of bullets) b.draw();
-
-  // HUD overlay
-  ctx.fillStyle = 'rgba(124,255,154,0.04)';
-  ctx.fillRect(6,6,220,28);
-  ctx.fillStyle = '#7CFF9A';
-  ctx.font = '18px monospace';
-  ctx.
