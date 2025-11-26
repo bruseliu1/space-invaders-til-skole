@@ -1,2 +1,2 @@
-# space-invaders-til-skole
+https://bruseliu1.github.io/space-invaders-til-skole/
 diddynigga
