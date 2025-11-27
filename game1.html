@@ -3,16 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dit spil</title>
+    <title>Game 1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1 class="title">Dit spil</h1>
+    <h1 class="title">Game 1</h1>
 
     <div class="game-container">
-        <!-- HER INDSÆTTER DU DIT SPILKODE -->
-        <!doctype html>
+        <iframe src="games/game1/index.html" class="game-frame"></iframe>
+    </div>
+
+    <p style="margin-top: 20px;">
+        <a href="index.html" style="color:white; text-decoration:underline;">← Tilbage</a>
+    </p>
+
+</body>
+
+<style>
+.game-container {
+    width: 100%;
+    max-width: 960px;
+    margin: auto;
+}
+.game-frame {
+    width: 100%;
+    height: 80vh;
+    border: none;
+    border-radius: 14px;
+}
+</style>
+</html>
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game 1 - Selve spillet</title>
+</head>
+<body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#222; color:white; font-family:sans-serif;">
+
+    <!-- Erstat dette med dit spil -->
+    <h1>Her starter dit spil!</h1>
+</p><!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -207,27 +240,11 @@ loop();
 </script>
 </body>
 </html>
-
-        <iframe src="YOURGAME/index.html" class="game-frame"></iframe>
-    </div>
-
-    <p style="margin-top: 20px;">
-        <a href="index.html" style="color:white; text-decoration:underline;">← Tilbage</a>
-    </p>
+</p>
 
 </body>
-
-<style>
-.game-container {
-    width: 100%;
-    max-width: 960px;
-    margin: auto;
-}
-.game-frame {
-    width: 100%;
-    height: 80vh;
-    border: none;
-    border-radius: 14px;
-}
-</style>
 </html>
+
+/game1.html       ← loader dit spil
+/games/game1/
+    index.html    ← selve spillet
