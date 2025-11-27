@@ -12,6 +12,202 @@
 
     <div class="game-container">
         <!-- HER INDSÆTTER DU DIT SPILKODE -->
+        <!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Classic Space Invaders (Single‑File)</title>
+<style>
+  body { margin:0; background:black; color:white; font-family:monospace; }
+  canvas { display:block; margin:0 auto; background:black; }
+  #ui { text-align:center; padding:10px; }
+</style>
+</head>
+<body>
+<div id="ui">
+  <button id="start">Start Game</button>
+  <span style="margin-left:20px;">Score: <span id="score">0</span></span>
+</div>
+<canvas id="game" width="600" height="600"></canvas>
+<script>
+// CLASSIC RETRO‑STYLE SPACE INVADERS — SIMPLE + ACCURATE
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const startBtn = document.getElementById("start");
+
+let game = {};
+
+function startGame(){
+  game = {
+    running: true,
+    score: 0,
+    player: { x: 300-20, y: 560, w: 40, h: 20, speed: 5, bullets: [] },
+    aliens: [],
+    alienDir: 1,
+    alienBullets: [],
+    alienSpeed: 0.6,
+    frames: 0
+  };
+  createAliens();
+}
+
+function createAliens(){
+  game.aliens = [];
+  for (let r=0; r<5; r++){
+    for (let c=0; c<11; c++){
+      game.aliens.push({
+        x: 60 + c*40,
+        y: 60 + r*32,
+        w: 30,
+        h: 20,
+        alive: true,
+        row:r
+      });
+    }
+  }
+}
+
+// INPUT
+const keys = { left:false, right:false, shoot:false };
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") keys.left=true;
+  if (e.key === "ArrowRight") keys.right=true;
+  if (e.key === " " ) keys.shoot=true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft") keys.left=false;
+  if (e.key === "ArrowRight") keys.right=false;
+  if (e.key === " " ) keys.shoot=false;
+});
+
+startBtn.onclick = () => startGame();
+
+// GAME LOOP
+function loop(){
+  requestAnimationFrame(loop);
+  if (!game.running) return;
+  update();
+  draw();
+}
+
+function update(){
+  game.frames++;
+  const p = game.player;
+
+  // MOVE PLAYER
+  if (keys.left) p.x -= p.speed;
+  if (keys.right) p.x += p.speed;
+  p.x = Math.max(0, Math.min(600 - p.w, p.x));
+
+  // SHOOT
+  if (keys.shoot && game.frames % 12 === 0){
+    p.bullets.push({x:p.x+p.w/2, y:p.y, w:2, h:8, speed:7});
+  }
+
+  // PLAYER BULLETS
+  p.bullets.forEach(b=> b.y -= b.speed);
+  p.bullets = p.bullets.filter(b=>b.y>-10);
+
+  // MOVE ALIENS
+  let hitEdge = false;
+  for (const a of game.aliens){
+    if (!a.alive) continue;
+    a.x += game.alienSpeed * game.alienDir;
+    if (a.x < 10 || a.x + a.w > 590) hitEdge = true;
+  }
+  if (hitEdge){
+    game.alienDir *= -1;
+    for (const a of game.aliens) a.y += 20;
+  }
+
+  // ALIEN SHOOTING
+  if (game.frames % 50 === 0){
+    const shooters = game.aliens.filter(a=>a.alive);
+    if (shooters.length){
+      const a = shooters[Math.floor(Math.random()*shooters.length)];
+      game.alienBullets.push({x:a.x+a.w/2, y:a.y+a.h, w:3, h:8, speed:3});
+    }
+  }
+
+  // ALIEN BULLETS
+  game.alienBullets.forEach(b=> b.y += b.speed);
+  game.alienBullets = game.alienBullets.filter(b=>b.y<620);
+
+  // COLLISIONS: PLAYER BULLET -> ALIEN
+  for (let b of p.bullets){
+    for (let a of game.aliens){
+      if (!a.alive) continue;
+      if (rectCollision(b,a)){
+        a.alive=false;
+        b.y = -999;
+        game.score += 10;
+      }
+    }
+  }
+  scoreEl.textContent = game.score;
+
+  // COLLISIONS: ALIEN BULLET -> PLAYER
+  for (let b of game.alienBullets){
+    if (rectCollision(b, p)){
+      game.running=false;
+      alert("GAME OVER! Score: " + game.score);
+    }
+  }
+
+  // LOSE IF ALIENS REACH PLAYER
+  for (let a of game.aliens){
+    if (a.alive && a.y + a.h >= p.y) {
+      game.running=false;
+      alert("DRÆB DIG SELV! Score: " + game.score);
+    }
+  }
+
+  // NEXT WAVE
+  if (!game.aliens.some(a=>a.alive)){
+    game.alienSpeed += 0.3;
+    createAliens();
+  }
+}
+
+function rectCollision(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+// DRAW
+function draw(){
+  ctx.clearRect(0,0,600,600);
+
+  // PLAYER
+  const p = game.player;
+  ctx.fillStyle = "white";
+  ctx.fillRect(p.x, p.y, p.w, p.h);
+
+  // PLAYER BULLETS
+  p.bullets.forEach(b => {
+    ctx.fillStyle = "#0ff";
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  });
+
+  // ALIENS
+  for (let a of game.aliens){
+    if (!a.alive) continue;
+    ctx.fillStyle = a.row<1 ? "#0f0" : a.row<3 ? "#ff0" : "#f00";
+    ctx.fillRect(a.x, a.y, a.w, a.h);
+  }
+
+  // ALIEN BULLETS
+  game.alienBullets.forEach(b => {
+    ctx.fillStyle = "red";
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  });
+}
+
+loop();
+</script>
+</body>
+</html>
+
         <iframe src="YOURGAME/index.html" class="game-frame"></iframe>
     </div>
 
