@@ -1,0 +1,14 @@
+my-arcade/
+   index.html
+   style.css
+   /games
+       /game1
+           index.html
+           game.html   (dit rigtige spil)
+           (alle spillets andre filer)
+       /game2
+           index.html
+           game.html
+   /images
+       game1.png
+       game2.png
