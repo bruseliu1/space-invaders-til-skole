@@ -198,3 +198,63 @@ requestAnimationFrame(loop);
 </body>
 </html>
 index.html
+game2.html
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game 2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1 class="title">Game 2</h1>
+
+
+    <p style="margin-top: 20px;">
+        <a href="index.html" style="color:white; text-decoration:underline;">← Tilbage</a>
+    </p>
+
+</body>
+
+<style>
+.game-container {
+    width: 100%;
+    max-width: 960px;
+    margin: auto;
+}
+.game-frame {
+    width: 100%;
+    height: 80vh;
+    border: none;
+    border-radius: 14px;
+}
+</style>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Basic Snake HTML Game</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    border: 1px solid white;
+  }
+  </style>
+</head>
+<body>
+<canvas width="400" height="400" id="game"></canvas>
+<script>
